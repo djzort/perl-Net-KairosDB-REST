@@ -196,7 +196,7 @@ At least one tag is required.
 Type identifies custom data types. This field is only needed if the data value is something
 other than a number. The type field is the name of the registered type for the custom data.
 
-See L<Custom Types|https://kairosdb.github.io/docs/build/html/restapi/AddDataPoints.html> for information on custom types.
+See L<Custom Types|https://kairosdb.github.io/docs/build/html/kairosdevelopment/CustomData.html> for information on custom types.
 
 =item ttl
 
@@ -438,7 +438,7 @@ At least one tag is required.
 Type identifies custom data types. This field is only needed if the data value is something
 other than a number. The type field is the name of the registered type for the custom data.
 
-See L<Custom Types|https://kairosdb.github.io/docs/build/html/restapi/AddDataPoints.html> for information on custom types.
+See L<Custom Types|https://kairosdb.github.io/docs/build/html/kairosdevelopment/CustomData.html> for information on custom types.
 
 =item ttl
 
@@ -743,7 +743,66 @@ This sorting is done before any aggregators are executed.
 
 B<Returns>
 
-Returns the metrics TODO
+Returns the metrics as a heshref.
+
+Something like this:
+
+ {
+   'queries' => [
+     {
+       'results' => [
+         {
+           'group_by' => [
+             {
+               'name' => 'type',
+               'type' => 'number'
+             }
+           ],
+           'name' => 'collectd.cpu',
+           'tags' => {
+             'host' => [
+               'my.server.local'
+             ],
+             'plugin_instance' => [
+               '0','1','2','3'
+             ],
+             'type' => [
+               'count',
+               'percent'
+             ],
+             'type_instance' => [
+               'idle',
+               'interrupt',
+               'nice',
+               'softirq',
+               'steal',
+               'system',
+               'user',
+               'wait'
+             ]
+           },
+           'values' => [
+             [
+               '1593325746247',
+               '99.7997997997998'
+             ],
+             [
+               '1593325746247',
+               '99.7993981945838'
+             ],
+             [
+               '1593325746247',
+               '99.6996996996997'
+             ]
+           ]
+         }
+       ],
+       'sample_size' => 537
+     }
+   ]
+ }
+
+Version 0.9.4 of KairosDB includes a group_by named "type". The type is the custom data type. If the data returned is not a custom type then "number" is returned. See L<Custom Types|https://kairosdb.github.io/docs/build/html/kairosdevelopment/CustomData.html> for information on custom types.
 
 B<Exceptions>
 
@@ -951,7 +1010,7 @@ sub query_metrics {
  my $features = $kdb->feature();
  my $feature  = $kdb->feature('featurename');
 
-Lists features available on the KairosDB server.
+The Features API returns metadata about various components of KairosDB. For example, this API will return metadata about aggregators and GroupBys.
 
 See L<https://kairosdb.github.io/docs/build/html/restapi/Features.html>
 
@@ -1014,6 +1073,58 @@ sub health {
 }
 
 # TODO metadata
+=head2 metadata
+
+ my @servicekeys = $kdb->metadata( service => 'service.name' );
+
+ my @keys        = $kdb->metadata( service    => 'service.name',
+                                   servicekey => 'service.key' );
+
+ my $value       = $kdb->metadata( service    => 'service.name',
+                                   servicekey => 'service.key',
+                                   key        => 'key' );
+
+The Metadata Rest API is a way to write data to the datastore in name/value pairs. Data is written separate from the time series data. Metadata is partitioned by a service name. A service partition can have multiple service keys. Each service key holds name/value pairs. A value is a string.
+
+B<Example>
+
+Assume you have a service that maintains metadata about each metric. Let’s call it the Metric Service. Your service associates each metric with a description, owner, and the unit type. The service name is "Metric Service", the metric is the service key and the name/value pairs are the owner, unit, and description and their values.
+
+ Metric Service
+
+ Metric           Owner      Unit   Description
+ -------------------------------------------------------
+ disk.available   OP's team  MB     Available disk space
+ foo.throughput   Foo team   Bytes  Number of bytes
+
+TODO
+
+=cut
+
+sub metadata {
+
+    # TODO
+
+}
+
+=head2 add_metadata
+
+ my $result = $kdb->add_metadata(
+                   service    => 'service.name',
+                   servicekey => 'service.key',
+                   key        => 'key.name',
+                   value      => 'My text data'
+               );
+
+TODO
+
+=cut
+
+sub add_metadata {
+    my ($self, %args) = @_;
+    # TODO
+
+}
 
 =head2 metricnames
 
