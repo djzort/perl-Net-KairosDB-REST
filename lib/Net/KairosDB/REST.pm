@@ -13,6 +13,7 @@ use URI::Encode::XS qw/ uri_encode /;
 use Net::KairosDB::REST::Feature;
 use Net::KairosDB::REST::Error;
 use JSON::MaybeXS qw( JSON );
+use List::Util::MaybeXS qw( uniq );
 
 use namespace::clean;
 
@@ -23,13 +24,14 @@ sub BUILD {
     my $self = shift;
     $self->ua->default_header(
         'User_Agent'    => sprintf(
-            'Net::KairosDB::REST %s (perl %s; %s)',
+            '%s %s (perl %s; %s)',
+            __PACKAGE__,
             (__PACKAGE__->VERSION || 999999),
             $^V, $^O),
     );
 }
 
-{
+{ # Wrap responses and convert to our errors
 
 my $ss = sub {
     my $orig = shift;
@@ -71,7 +73,7 @@ sub _now_milliseconds {
 sub _epoch_from_obj {
     my $ts = shift;
 
-    if (ref $ts =~ m/^(?:DateTime|Time::(?:Moment|Piece))$/ ) {
+    if (ref $ts =~ m/^(?:DateTime|Time::(?:Moment|Piece))$/) {
         return $ts->epoch * 1_000
     }
     if (ref $ts eq 'Date::Manip::Date') {
@@ -1084,27 +1086,96 @@ sub health {
                                    servicekey => 'service.key',
                                    key        => 'key' );
 
+This function returns metadata information.
+
 The Metadata Rest API is a way to write data to the datastore in name/value pairs. Data is written separate from the time series data. Metadata is partitioned by a service name. A service partition can have multiple service keys. Each service key holds name/value pairs. A value is a string.
 
-B<Example>
+B<Example Scenario>
 
-Assume you have a service that maintains metadata about each metric. Let’s call it the Metric Service. Your service associates each metric with a description, owner, and the unit type. The service name is "Metric Service", the metric is the service key and the name/value pairs are the owner, unit, and description and their values.
+Assume you have a service that maintains metadata about each metric. Let’s call it the I<Metric Service>. Your service associates each metric with a description, owner, and the unit type. The B<service name> is I<Metric Service>, the I<Metric> is the B<service key> and the B<name/value> pairs are the I<owner>, I<unit>, and I<description> and their I<values>.
 
  Metric Service
 
- Metric           Owner      Unit   Description
- -------------------------------------------------------
- disk.available   OP's team  MB     Available disk space
- foo.throughput   Foo team   Bytes  Number of bytes
+ Metric          Owner      Unit   Description
+ ------------------------------------------------------
+ disk.available  OP's team  MB     Available disk space
+ foo.throughput  Foo team   Bytes  Number of bytes
 
-TODO
+Translates to
+
+ Service: Metric Service
+ Service Key: disk.available
+ name: Owner
+ value: Op's team
+ name: Unit
+ value: MB
+ name: Description
+ value: Available disk space
+
+B<Parameters>
+
+=over 4
+
+=item service
+
+The name of the service.
+
+This option is required.
+
+=item servicekey
+
+The name of the service key.
+
+This is an optional argument.
+
+=item key
+
+The name of the key.
+
+This is an optional argument and is ignored without a I<servicekey>.
+
+=back
+
+B<Returns>
+
+A list or arrayref of service or service key or key names.
+
+If I<service>, I<servicekey>, and I<key> are provided, the return value will be a string.
 
 =cut
 
 sub metadata {
-
-    # TODO
-
+    my ($self, %args) = @_;
+    return unless keys %args;
+    return unless $args{service};
+    my @path = ('metadata');
+    push @path, $args{service};
+    if ($args{servicekey}) {
+        push @path, $args{servicekey};
+        push @path, $args{key}
+            if $args{key}
+    }
+    # if all three arguments, need to do special handling
+    # ... see https://github.com/kairosdb/kairosdb/issues/624
+    if (4 == scalar @path) {
+        my $path = $self->_mkuri(@path);
+        my $text;
+        eval {
+        $text = $self->get( $path, undef, deserializer => undef );
+        };
+        # Catch error 500 which is a bug
+        # ... see https://github.com/kairosdb/kairosdb/issues/625
+        if ($@) {
+            return if $@->code == 500;
+            die $@
+        }
+        return $text
+    }
+    my $data = $self->get( $self->_mkuri(@path) );
+    return unless $data->{results};
+    # strangely, keys are returned many times. hide that.
+    return wantarray ? uniq sort @{$data->{results}}
+                     : [ uniq sort @{$data->{results}} ]
 }
 
 =head2 add_metadata
