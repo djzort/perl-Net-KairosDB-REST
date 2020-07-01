@@ -4,6 +4,7 @@
 
 package Net::KairosDB::REST;
 
+use v5.10;
 use Moo;
 # VERSION
 with 'WebService::Client';
@@ -18,6 +19,7 @@ use List::Util::MaybeXS qw( uniq );
 use namespace::clean;
 
 has '+base_url' => ( default => 'http://localhost:8080' );
+#has '+mode' => ( default => 'v2' ); # WebService::Client should return response objects
 has 'api_version' => ( is => 'ro', default => 'v1' );
 
 sub BUILD {
@@ -39,6 +41,8 @@ my $ss = sub {
     my $result;
     eval { $result = $orig->($self,@_) };
     if ($@) {
+        warn 'Error ref: ' . ref $@;
+        warn 'Error: ' .$@ . 'END';
         Net::KairosDB::REST::Error->throw({
                 code    => $@->code,
                 content => $@->content,
@@ -1074,8 +1078,7 @@ sub health {
     return wantarray ? @$data : $data
 }
 
-# TODO metadata
-=head2 metadata
+=head2 get_metadata
 
  my @servicekeys = $kdb->metadata( service => 'service.name' );
 
@@ -1144,12 +1147,11 @@ If I<service>, I<servicekey>, and I<key> are provided, the return value will be 
 
 =cut
 
-sub metadata {
+sub get_metadata {
     my ($self, %args) = @_;
-    return unless keys %args;
-    return unless $args{service};
-    my @path = ('metadata');
-    push @path, $args{service};
+    die 'No "service" provided'
+        unless $args{service};
+    my @path = ('metadata', $args{service});
     if ($args{servicekey}) {
         push @path, $args{servicekey};
         push @path, $args{key}
@@ -1178,6 +1180,7 @@ sub metadata {
                      : [ uniq sort @{$data->{results}} ]
 }
 
+# Pod TODO
 =head2 add_metadata
 
  my $result = $kdb->add_metadata(
@@ -1187,14 +1190,42 @@ sub metadata {
                    value      => 'My text data'
                );
 
-TODO
-
 =cut
 
 sub add_metadata {
     my ($self, %args) = @_;
-    # TODO
+    for my $foo (qw/ service servicekey key value/) {
+        die sprintf('No "%s" provided', $foo)
+            unless $args{$foo};
+    }
+    my @path = (
+        'metadata',
+        $args{service},
+        $args{servicekey},
+        $args{key});
 
+    return $self->post(
+        $self->_mkuri(@path),
+        $args{value},
+        serializer => undef, # send as is
+    )
+
+}
+
+# Pod TODO
+
+sub delete_metadata {
+    my ($self, %args) = @_;
+    # FIXME should complain if missing value
+    return unless $args{service};
+    return unless $args{servicekey};
+    return unless $args{key};
+    my @path = ('metadata');
+    push @path, $args{service};
+    push @path, $args{servicekey};
+    push @path, $args{key};
+
+    return $self->delete( $self->_mkuri(@path) );
 }
 
 =head2 metricnames

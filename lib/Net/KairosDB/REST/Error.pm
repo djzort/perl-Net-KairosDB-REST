@@ -4,6 +4,7 @@
 
 package Net::KairosDB::REST::Error;
 
+use v5.10;
 use Moo;
 with 'Throwable';
 # VERSION

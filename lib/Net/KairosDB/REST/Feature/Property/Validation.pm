@@ -4,6 +4,7 @@
 
 package Net::KairosDB::REST::Feature::Property::Validation;
 
+use v5.10;
 use Moo;
 # VERSION
 use namespace::clean;

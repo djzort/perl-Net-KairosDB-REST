@@ -4,6 +4,7 @@
 
 package Net::KairosDB::REST::Metadata::Service;
 
+use v5.10;
 use Moo;
 use Net::KairosDB::REST::Feature::Metadata::Service;
 # VERSION
