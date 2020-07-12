@@ -1180,7 +1180,6 @@ sub get_metadata {
                      : [ uniq sort @{$data->{results}} ]
 }
 
-# Pod TODO
 =head2 add_metadata
 
  my $result = $kdb->add_metadata(
@@ -1189,6 +1188,52 @@ sub get_metadata {
                    key        => 'key.name',
                    value      => 'My text data'
                );
+
+Add a value to service metadata.
+
+B<Parameters>
+
+=over 4
+
+=item service
+
+The name of the service.
+
+This option is required.
+
+=item servicekey
+
+The name of the service key.
+
+This option is required.
+
+=item key
+
+The name of the key.
+
+This option is required.
+
+=item value
+
+The value of the key.
+
+This option is required.
+
+=back
+
+B<Returns>
+
+Merely returns true (1) if successful.
+
+B<Exceptions>
+
+See also L<Net::KairosDB::REST::Error>
+
+=over 4
+
+=item 500 - Internal server error
+
+=back
 
 =cut
 
@@ -1212,18 +1257,67 @@ sub add_metadata {
 
 }
 
-# Pod TODO
+=head2 delete_metadata
+
+ my $result = $kdb->delete_metadata(
+                   service    => 'service.name',
+                   servicekey => 'service.key',
+                   key        => 'key.name',
+               )
+
+Delete a value from service metadata.
+
+B<Parameters>
+
+=over 4
+
+=item service
+
+The name of the service.
+
+This option is required.
+
+=item servicekey
+
+The name of the service key.
+
+This option is required.
+
+=item key
+
+The name of the key.
+
+This option is required.
+
+=back
+
+B<Returns>
+
+Returns all keys for the given service key or an empty list if no keys exist.
+
+B<Exceptions>
+
+See also L<Net::KairosDB::REST::Error>
+
+=over 4
+
+=item 500 - Internal server error
+
+=back
+
+=cut
 
 sub delete_metadata {
     my ($self, %args) = @_;
-    # FIXME should complain if missing value
-    return unless $args{service};
-    return unless $args{servicekey};
-    return unless $args{key};
-    my @path = ('metadata');
-    push @path, $args{service};
-    push @path, $args{servicekey};
-    push @path, $args{key};
+    for my $foo (qw/ service servicekey key /) {
+        die sprintf('No "%s" provided', $foo)
+            unless $args{$foo};
+    }
+    my @path = (
+        'metadata',
+        $args{service},
+        $args{servicekey},
+        $args{key});
 
     return $self->delete( $self->_mkuri(@path) );
 }
