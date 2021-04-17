@@ -974,7 +974,41 @@ sub query_metrics {
                 die 'The metrics "group_by" "name" option must be a string'
                     if ref $args->{name};
 
-                # TODO more group_by options http://kairosdb.github.io/docs/build/html/restapi/QueryMetrics.html#request-methods
+                # Grouping by bin
+                if ($args->{name} eq 'bin') {
+                    die 'The "group_by" of "bin" requires a "bin" attribute'
+                        unless $args->{bin};
+                    die 'The "group_by" of "bin" attribute "bin" must be an arrayref'
+                        unless ref $args->{bin} ne 'ARRAYREF';
+                    next
+                }
+
+                # Grouping by value
+                if ($args->{name} eq 'value') {
+                    die 'The "group_by" of "value" requires a "range_size" attribute'
+                        unless $args->{range_size};
+                    die 'The "group_by" of "value" attribute "range_size" must be a number'
+                        if ref $args->{range_size} or $args->{range_size} =~ m/[^0-9]/;
+                    next
+                }
+
+                # Grouping by value
+                if ($args->{name} eq 'time') {
+                    # TODO more values here
+                    next
+                }
+
+                # Grouping by tag
+                if ($args->{name} eq 'tag') {
+                    die 'The "group_by" of "tag" requires a "tag" attribute'
+                        unless $args->{tags};
+                    die 'The "group_by" of "tag" attribute "tags" must be an arrayref'
+                        unless ref $args->{tags} ne 'ARRAYREF';
+                    next
+                }
+
+                # Unknown
+                die sprintf('Unknown "name" value "%s" for "group_by"', $args->{name});
 
             }
         }
@@ -1131,7 +1165,7 @@ The Metadata Rest API is a way to write data to the datastore in name/value pair
 
 B<Example Scenario>
 
-Assume you have a service that maintains metadata about each metric. Let’s call it the I<Metric Service>. Your service associates each metric with a description, owner, and the unit type. The B<service name> is I<Metric Service>, the I<Metric> is the B<service key> and the B<name/value> pairs are the I<owner>, I<unit>, and I<description> and their I<values>.
+Assume you have a service that maintains metadata about each metric. Let's call it the I<Metric Service>. Your service associates each metric with a description, owner, and the unit type. The B<service name> is I<Metric Service>, the I<Metric> is the B<service key> and the B<name/value> pairs are the I<owner>, I<unit>, and I<description> and their I<values>.
 
  Metric Service
 
