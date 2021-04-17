@@ -24,13 +24,11 @@ has 'api_version' => ( is => 'ro', default => 'v1' );
 
 sub BUILD {
     my $self = shift;
-    $self->ua->default_header(
-        'User_Agent'    => sprintf(
+    $self->ua->agent(sprintf(
             '%s %s (perl %s; %s)',
             __PACKAGE__,
             (__PACKAGE__->VERSION || 999999),
-            $^V, $^O),
-    );
+            $^V, $^O));
 }
 
 { # Wrap responses and convert to our errors
@@ -86,7 +84,18 @@ sub _epoch_from_obj {
     die sprintf( 'Don\'t know how to serialize "timestamp" of ref %s', ref $ts )
 }
 
-# TODO datapoints_helper
+=head1 SYNOPSIS
+
+ use Net::KairosDB::REST;
+ my $kdb = Net::KairosDB::REST->new(
+    base_url => 'http://kairosdb.server.fqdn:8080',
+    # logger => Log::Tiny->new('/tmp/debug.log'),
+ );
+
+TODO
+
+
+=head1 METHODS
 
 =head2 datapoints
 
@@ -231,6 +240,8 @@ See also L<Net::KairosDB::REST::Error>
 
 =cut
 
+# TODO datapoints_helper
+
 sub datapoints {
 
     my $self = shift;
@@ -296,10 +307,10 @@ sub datapoints {
             die 'The "timestamp" option is only valid with a single "value", not a list of "datapoints"'
                 if $args->{timestamp};
             die 'The "datapoints" option must be an array ref'
-                if $args->{datapoints} ne 'ARRAY';
+                if ref $args->{datapoints} ne 'ARRAY';
             for my $dp (@{$args->{datapoints}}) {
                 die 'All values in "datapoints" array must be array refs'
-                    if $dp ne 'ARRAY';
+                    if ref $dp ne 'ARRAY';
                 die 'Two values (timestamp, value) must be provided for each item in the "datapoints" array'
                     if scalar @$dp != 2;
                 $dp->[0] = _epoch_from_obj( $dp->[0] )
@@ -311,9 +322,9 @@ sub datapoints {
         die 'The "tags" option is required'
             unless $args->{tags};
         die 'The "tags" option must be a hash ref'
-            if $args->{tags} ne 'HASH';
+            if ref $args->{tags} ne 'HASH';
         die 'The "tags" option must have at lease one value'
-            if scalar keys %{$args->{tags}} > 0;
+            if scalar keys %{$args->{tags}} == 0;
 
         for my $v ( values %{$args->{tags}} ) {
             die 'The "tags" values must all be strings'
@@ -534,10 +545,10 @@ sub delete_datapoints {
             die 'The "timestamp" option is only valid with a single "value", not a list of "datapoints"'
                 if $args->{timestamp};
             die 'The "datapoints" option must be an array ref'
-                if $args->{datapoints} ne 'ARRAY';
+                if ref $args->{datapoints} ne 'ARRAY';
             for my $dp (@{$args->{datapoints}}) {
                 die 'All values in "datapoints" array must be array refs'
-                    if $dp ne 'ARRAY';
+                    if ref $dp ne 'ARRAY';
                 die 'Two values (timestamp, value) must be provided for each item in the "datapoints" array'
                     if scalar @$dp != 2;
                 $dp->[0] = _epoch_from_obj( $dp->[0] )
@@ -549,7 +560,7 @@ sub delete_datapoints {
         die 'The "tags" option is required'
             unless $args->{tags};
         die 'The "tags" option must be a hash ref'
-            if $args->{tags} ne 'HASH';
+            if ref $args->{tags} ne 'HASH';
         die 'The "tags" option must have at lease one value'
             if scalar keys %{$args->{tags}} > 0;
 
@@ -979,7 +990,7 @@ sub query_metrics {
                     die 'The "group_by" of "bin" requires a "bin" attribute'
                         unless $args->{bin};
                     die 'The "group_by" of "bin" attribute "bin" must be an arrayref'
-                        unless ref $args->{bin} ne 'ARRAYREF';
+                        unless ref $args->{bin} ne 'ARRAY';
                     next
                 }
 
@@ -1003,7 +1014,7 @@ sub query_metrics {
                     die 'The "group_by" of "tag" requires a "tag" attribute'
                         unless $args->{tags};
                     die 'The "group_by" of "tag" attribute "tags" must be an arrayref'
-                        unless ref $args->{tags} ne 'ARRAYREF';
+                        unless ref $args->{tags} ne 'ARRAY';
                     next
                 }
 
@@ -1089,7 +1100,7 @@ sub features {
  else {
    echo "KairosDB is NOT healthy"
  }
- 
+
 Checks the status of each health check, if all are healthy returns true.
 Otherwise returns false.
 
