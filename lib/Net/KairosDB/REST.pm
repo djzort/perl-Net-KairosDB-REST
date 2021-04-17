@@ -1012,9 +1012,9 @@ sub query_metrics {
 
 =head2 features
 
- my @features = $kdb->feature();
- my $features = $kdb->feature();
- my $feature  = $kdb->feature('featurename');
+ my @features = $kdb->features();
+ my $features = $kdb->features();
+ my $feature  = $kdb->features('featurename');
 
 The Features API returns metadata about various components of KairosDB. For example, this API will return metadata about aggregators and GroupBys.
 
@@ -1047,10 +1047,46 @@ sub features {
     return wantarray ? @foo : \@foo;
 }
 
-=head2 health
+=head2 health_check
 
- my @healths = $kdb->health();
- my $healths = $kdb->health();
+ if ( $kdb->health_check() ) {
+   echo "KairosDB is healthy"
+ }
+ else {
+   echo "KairosDB is NOT healthy"
+ }
+ 
+Checks the status of each health check, if all are healthy returns true.
+Otherwise returns false.
+
+See L<https://kairosdb.github.io/docs/build/html/restapi/Health.html>
+
+B<Parameters>
+
+None.
+
+B<Returns>
+
+True (1) or False (null)
+
+=cut
+
+sub health_check {
+    my $self = shift;
+    eval {
+        $self->get( $self->_mkuri('health','check') );
+	};
+	if ($@) {
+        return if $@->code == 500;
+        die $@
+	}
+	return 1
+}
+
+=head2 health_status
+
+ my @healths = $kdb->health_status();
+ my $healths = $kdb->health_status();
 
 KairosDB provides REST APIs that show the health of the system.
 
@@ -1067,11 +1103,11 @@ None.
 
 B<Returns>
 
-List of health status items
+List of health status items (strings)
 
 =cut
 
-sub health {
+sub health_status {
     my $self = shift;
     my $data = $self->get( $self->_mkuri('health','status') );
     return unless $data;
@@ -1427,22 +1463,46 @@ sub rollups {
 
 =head2 tagnames
 
-FIXME
+ my @tagnames = $kdb->tagnames();
+ my $tagnames = $kdb->tagnames();
+
+Returns a list of all tag names.
 
 See L<https://kairosdb.github.io/docs/build/html/restapi/ListTagNames.html>
+
+B<Parameters>
+
+None
+
+B<Returns>
+
+A list or arrayref of tag names (strings)
 
 =cut
 
 sub tagnames {
     my $self = shift;
     my $data = $self->get( $self->_mkuri('tagnames') );
-    return $data->{results} if $data->{results};
-    return
+    return unless $data->{results};
+    return wantarray ? @{$data->{results}} : $data->{results}
 }
 
 =head2 tagvalues
 
-FIXME
+ my @tagvalues = $kdb->tagvalues();
+ my $tagvalues = $kdb->tagvalues();
+
+Returns a list of all tag values.
+
+See L<https://kairosdb.github.io/docs/build/html/restapi/ListTagNames.html>
+
+B<Parameters>
+
+None
+
+B<Returns>
+
+A list or arrayref of tag values (strings)
 
 See L<https://kairosdb.github.io/docs/build/html/restapi/ListTagValues.html>
 
@@ -1451,8 +1511,8 @@ See L<https://kairosdb.github.io/docs/build/html/restapi/ListTagValues.html>
 sub tagvalues {
     my $self = shift;
     my $data = $self->get( $self->_mkuri('tagvalues') );
-    return $data->{results} if $data->{results};
-    return
+    return unless $data->{results};
+    return wantarray ? @{$data->{results}} : $data->{results}
 }
 
 =head2 server_version
