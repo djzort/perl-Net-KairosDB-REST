@@ -6,7 +6,7 @@ package Net::KairosDB::REST::Metadata::Service;
 
 use v5.10;
 use Moo;
-use Net::KairosDB::REST::Feature::Metadata::Service;
+#use Net::KairosDB::REST::Feature::Metadata::Service;
 # VERSION
 use namespace::clean;
 
@@ -36,7 +36,7 @@ sub service_keys {
 # https://kairosdb.github.io/docs/build/html/restapi/Metadata.html#list-keys
 sub keys {
     my ($self,%args) = @_;
-    return unless _looks_ok(\%args,[qw/ service_key /];
+    return unless _looks_ok(\%args,[qw/ service_key /]);
     my $kdb = $self->kdb;
     my $data = $kdb->get(
         $kdb->_mkuri(
@@ -48,7 +48,7 @@ sub keys {
 # https://kairosdb.github.io/docs/build/html/restapi/Metadata.html#add-the-value
 sub add {
     my ($self,%args) = @_;
-    return unless _looks_ok(\%args,[qw/ service_key key value /];
+    return unless _looks_ok(\%args,[qw/ service_key key value /]);
     my $kdb = $self->kdb;
     my $data = $kdb->post(
         $kdb->_mkuri(
@@ -61,7 +61,7 @@ sub add {
 # https://kairosdb.github.io/docs/build/html/restapi/Metadata.html#get-the-value
 sub get {
     my ($self,%args) = @_;
-    return unless _looks_ok(\%args,[qw/ service_key key /];
+    return unless _looks_ok(\%args,[qw/ service_key key /]);
     my $kdb = $self->kdb;
     my $data = $kdb->get(
         $kdb->_mkuri(
@@ -73,7 +73,7 @@ sub get {
 # https://kairosdb.github.io/docs/build/html/restapi/Metadata.html#delete-key
 sub delete {
     my ($self,%args) = @_;
-    return unless _looks_ok(\%args,[qw/ service_key key /];
+    return unless _looks_ok(\%args,[qw/ service_key key /]);
     my $kdb = $self->kdb;
     my $data = $kdb->delete(
         $kdb->_mkuri(
